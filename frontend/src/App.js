@@ -1,17 +1,26 @@
-// src/App.js
-import React from 'react';
-import AuthProvider from './context/AuthProvider';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import Dashboard from './components/Dashboard';
+import Login from './components/Login';
+import AuthProvider from './context/AuthContext';
+import PermissionProvider from './context/PermissionContext';
 
-const AppContent = () => {
-  const token = localStorage.getItem('token');
-  return token ? <DashboardPage /> : <LoginPage />;
-};
+function App() {
+  return (
+    // <div>
+    //   <Dashboard />
+    // </div>
+    <Router>
+      <AuthProvider>
+        <PermissionProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="*" element={<Dashboard />} />
+          </Routes>
+        </PermissionProvider>
+      </AuthProvider>
+    </Router>
+  );
+}
 
-const App = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
-);
 export default App;

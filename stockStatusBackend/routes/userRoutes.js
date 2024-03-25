@@ -1,41 +1,36 @@
 const express = require('express');
-const isNullOrUndefined = require('../utils/nullOrUndefined');
+const { isNullOrUndefined } = require('util');
 
 const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
+const userController = require('../controllers/userController');
 
-const UserService = require('../services/userService');
+router.post('/signin', userController.getUserByUserName);
+router.get('/getusers', userController.getAllUsersList);
 
-const userService = new UserService();
+// SignUp Route
+router.post('/signup', async (req, res) => {
+  try {
+    const token = await userService.signupUser(req, res);
+    res.status(200).json({ msg: 'success', token });
+  } catch (error) {
+    console.error('Error getting paint orders:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 // SignIn Route
-router.post('/signin', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
-    await userService.loginUser(req, res);
+    const user = await userService.loginUser(req, res);
+    res.status(200).json({ msg: 'success', user });
   } catch (error) {
     console.error('Error signin:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error', error });
   }
 });
 
 //*
-router.get('/getusers', async (req, res) => {
-  try {
-    const users = await userService.getAllUsers();
-    const userList = users.reduce((acc, user) => {
-      if (user.username && user.isActive)
-        acc.push({
-          username: user.username
-        });
-      return acc;
-    }, []);
-    console.log('userList:', userList);
-    res.status(200).json({ msg: 'success', userList });
-  } catch (error) {
-    console.error('Error getting users:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 router.put('/update', async (req, res) => {
   const params = req.body;
@@ -56,5 +51,7 @@ router.post('/signout', verifyToken, (req, res) => {
   // Inform the client to clear the JWT token
   res.status(200).send('Sign-out successful. Please clear your token.');
 });
+
+router.get('/', userController.getUserByUserName);
 
 module.exports = router;

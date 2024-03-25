@@ -1,5 +1,5 @@
-// src/context/AuthProvider.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -7,7 +7,7 @@ export const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -17,11 +17,12 @@ const AuthProvider = ({ children }) => {
 
   const login = () => {
     setIsAuthenticated(true);
+    navigate('/dashboard');
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('token');
+    localStorage.clear();
   };
 
   return (

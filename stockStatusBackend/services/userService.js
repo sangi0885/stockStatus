@@ -26,71 +26,42 @@ class UserService {
     return users;
   }
 
-  async signupUser(req, res) {
-    const params = req.body;
-    if (isNullOrUndefined(params)) {
-      return res.status(400).send('Email and password are required');
-    }
-
-    const { email, password } = params;
-    const isValidateEmailAndPassword = isValidateEmailAndPass(email, password);
-
-    if (isValidateEmailAndPassword.length > 0) {
-      throw new InternalError(400, isValidateEmailAndPassword);
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 8);
-
-    try {
-      const userRef = db.collection('users').doc(email);
-      const doc = await userRef.get();
-      if (doc.exists) {
-        throw new InternalError(400, 'User already exists');
-      }
-
-      const user = await userRef.set({
-        email,
-        password: hashedPassword,
-        isActive: false
-      });
-      return user;
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  }
-
   async loginUser(req, res) {
-    const { email, password } = req.body;
-    console.log('coming here', { email, password });
+    const { username } = req.body;
+    console.log('coming here', { username });
 
     try {
-      const userRef = db.collection('users').doc(email);
-      const doc = await userRef.get();
-      if (!doc.exists) {
-        throw new InternalError(400, 'User does not exist', doc);
+      const userRef = db.collection('users').where('username', '==', username);
+      const snapshot = await userRef.get();
+
+      if (snapshot.empty) {
+        return res.status(401).json({ error: 'User does not exist' });
       }
 
-      const user = doc.data();
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
-        throw new InternalError(401, 'Invalid credentials');
-      }
+      let user = {};
+      snapshot.forEach(doc => {
+        console.log(doc.id, '=>', doc.data());
+        user = doc.data();
+      });
 
       if (!user.isActive) {
-        throw new InternalError(401, 'User is not active');
+        return res.status(401).json({ error: 'User is not active' });
       }
 
-      const token = jwt.sign(
-        { email: user.email, role: user.role, name: user.name },
-        JWT_SECRET,
-        {
-          expiresIn: '1h'
-        }
-      );
-      return { token, email: user.email, role: user.roleId, name: user.name };
+      const token = jwt.sign({ username: username }, JWT_SECRET, {
+        expiresIn: '1h'
+      });
+
+      res.status(200).json({
+        token,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        username: user.username
+      });
     } catch (error) {
       console.error('Error signing in:', error);
-      throw new InternalError(401, 'Interal server error', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 
