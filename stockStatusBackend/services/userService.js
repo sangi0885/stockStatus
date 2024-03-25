@@ -2,10 +2,7 @@ const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const isNullOrUndefined = require('../utils/nullOrUndefined');
-const {
-  isValidateEmailAndPass,
-  isValidateUserToBeUpdated
-} = require('../utils/validators');
+const { isValidateUserToBeUpdated } = require('../utils/validators');
 const InternalError = require('../errorHandlers/InternalError');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret';
