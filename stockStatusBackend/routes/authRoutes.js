@@ -1,64 +1,62 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const admin = require('firebase-admin');
-const db = admin.firestore();
+const isNullOrUndefined = require('../utils/nullOrUndefined');
 
 const router = express.Router();
+const verifyToken = require('../middlewares/authMiddleware');
 
-// Secret for JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+const UserService = require('../services/userService');
+
+const userService = new UserService();
 
 // SignUp Route
 router.post('/signup', async (req, res) => {
-  const { email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 8);
-
   try {
-    const userRef = db.collection('users').doc(email);
-    const doc = await userRef.get();
-    if (doc.exists) {
-      return res.status(400).send('User already exists');
-    }
-    await userRef.set({
-      email,
-      password: hashedPassword,
-      isActive: false
-    });
-    res.status(201).send('User created successfully');
+    const token = await userService.signupUser(req, res);
+    res.status(200).json({ msg: 'success', token });
   } catch (error) {
-    res.status(500).send(error.message);
+    console.error('Error getting paint orders:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // SignIn Route
 router.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    const userRef = db.collection('users').doc(email);
-    const doc = await userRef.get();
-    if (!doc.exists) {
-      return res.status(400).send('User does not exist');
-    }
-
-    const user = doc.data();
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).send('Invalid credentials');
-    }
-
-    const token = jwt.sign({ email: user.email }, JWT_SECRET, {
-      expiresIn: '1h'
-    });
-    res.status(200).send({ token });
+    const user = await userService.loginUser(req, res);
+    res.status(200).json({ msg: 'success', user });
   } catch (error) {
-    res.status(500).send(error.message);
+    console.error('Error signin:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+//*
+router.post('/users', async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    res.status(200).json({ msg: 'success', users });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.put('/update', async (req, res) => {
+  const params = req.body;
+  if (isNullOrUndefined(params)) {
+    return res.status(400).send('User data is required to update user');
+  }
+  try {
+    const users = await userService.updateUser(params);
+    res.status(200).json({ msg: 'success', users });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // SignOut Route (For JWT, signing out is usually handled client-side by removing the token)
-router.post('/signout', (req, res) => {
+router.post('/signout', verifyToken, (req, res) => {
   // Inform the client to clear the JWT token
   res.status(200).send('Sign-out successful. Please clear your token.');
 });

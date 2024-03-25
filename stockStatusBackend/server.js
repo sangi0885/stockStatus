@@ -5,13 +5,17 @@ const base_path = __basedir;
 const express = require('express');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-const { initializeFirebaseApp } = require('./config/config');
-initializeFirebaseApp();
+app.use(express.json());
+const cors = require('cors'); // Import the 'cors' package
 
-const authRoutes = require('./routes/authRoutes');
-const verifyToken = require('./middlewares/authMiddleware');
+app.use(express.urlencoded({ extended: true }));
+app.use(cors()); // Initialize 'cors' as middleware
+const PORT = process.env.PORT || 8080;
+const HOST = process.env.HOST || 'http://localhost:';
+const { initializeFirebaseApp } = require('./config/config');
+
 // Initialize Firebase Admin SDK
+initializeFirebaseApp();
 
 // Import routes
 const indexRoutes = require('./routes/indexRoutes');
@@ -19,11 +23,6 @@ const indexRoutes = require('./routes/indexRoutes');
 // Use Routes
 app.use('/api', indexRoutes);
 
-// Example of a protected route
-app.get('/protected', verifyToken, (req, res) => {
-  res.send('You have accessed a protected route');
-});
-
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on ${HOST}${PORT}`);
 });

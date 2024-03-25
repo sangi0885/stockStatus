@@ -1,8 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const verifyToken = require('../middlewares/authMiddleware');
 const PaintService = require('../services/paintService');
 
 const paintService = new PaintService();
+
+// Route to add paint inventory
+
+router.post('/add', async (req, res) => {
+  try {
+    const data = await paintService.addPaintInventory(req, res);
+    res.status(200).json({ msg: 'Paint added successfully', data });
+  } catch (error) {
+    console.error('Error adding paint inventory:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 // Route to get all paint inventory
 router.get('/inventory', async (req, res) => {

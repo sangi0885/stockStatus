@@ -1,4 +1,6 @@
 const admin = require('firebase-admin');
+const InternalError = require('../errorHandlers/InternalError');
+const { isPaintToBeUpdated, isPaintToBeAdded } = require('../utils/validators');
 const db = admin.firestore();
 
 class PaintService {
@@ -17,6 +19,28 @@ class PaintService {
     return paintInventory;
   }
 
+  async addPaintInventory(req, res) {
+    const params = req.body;
+
+    const isValidatePaintInfo = isPaintToBeAdded(params);
+
+    if (isValidatePaintInfo.length > 0) {
+      throw new InternalError(200, isValidatePaintInfo);
+    }
+
+    try {
+      const { name, quantity } = params;
+      const newOrderRef = await this.paintInventoryCollection.add({
+        name,
+        quantity
+      });
+
+      return newOrderRef.id;
+    } catch (error) {
+      throw new InternalError(500, 'Internal server error', error);
+    }
+  }
+
   async getAllPaintOrders() {
     const snapshot = await this.paintOrderCollection.get();
     const paintOrders = [];
@@ -24,17 +48,6 @@ class PaintService {
       paintOrders.push({ id: doc.id, ...doc.data() });
     });
     return paintOrders;
-  }
-
-  async getUserByEmail(email) {
-    const querySnapshot = await this.userCollection
-      .where('email', '==', email)
-      .get();
-    if (querySnapshot.empty) {
-      return null;
-    }
-    const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() };
   }
 
   async createPaintOrder(orderDetails) {
@@ -52,16 +65,20 @@ class PaintService {
       return newOrderRef.id;
     } catch (error) {
       console.error('Error creating paint order:', error);
-      throw error;
+      throw new InternalError(500, 'Internal server error', error);
     }
   }
 
   async updatePaintInventory(paintId, updatedInventory) {
+    const isValidInfo = isPaintToBeUpdated(updatedInventory);
+    if (isValidInfo.length > 0) {
+      throw new InternalError(404, isValidInfo);
+    }
     try {
       await this.paintInventoryCollection.doc(paintId).update(updatedInventory);
     } catch (error) {
       console.error('Error updating paint inventory:', error);
-      throw error;
+      throw new InternalError(500, 'Internal server error', error);
     }
   }
 }

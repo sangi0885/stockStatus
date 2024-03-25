@@ -5,7 +5,7 @@ const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1]; // Bearer <token>
 
   if (!token) {
-    return res.status(403).send('A token is required for authentication');
+    return res.status(403).send('Unauthorized Access, Please login');
   }
 
   try {

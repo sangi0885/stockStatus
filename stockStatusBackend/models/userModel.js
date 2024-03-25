@@ -1,8 +1,5 @@
-const admin = require('firebase-admin');
-const db = admin.firestore();
-
 class UserModel {
-  constructor(id, name, role, email, isActive) {
+  constructor(id, name, role, email, isActive, password) {
     this.id = id;
     this.name = name;
     this.role = role;
@@ -10,26 +7,24 @@ class UserModel {
     this.isActive = isActive;
   }
 
-  static async getUserByEmail(email) {
-    const usersRef = db.collection('users');
-    const snapshot = await usersRef.where('email', '==', email).get();
-    if (snapshot.empty) {
-      console.log('No matching user.');
-      return null;
-    }
-
-    let userData = {};
-    snapshot.forEach(doc => {
-      userData = { id: doc.id, ...doc.data() };
-    });
-    return new UserModel(
-      userData.id,
-      userData.name,
-      userData.role,
-      userData.email,
-      userData.isActive
-    );
+  getUserName() {
+    return this.name;
   }
-
-  // Additional methods like addUser, updateUser, deleteUser can be implemented here.
+  getUserRole() {
+    return this.role;
+  }
+  getUserEmail() {
+    return this.email;
+  }
+  getUserDetails = () => {
+    return {
+      id: this.id,
+      name: this.name,
+      role: this.role,
+      email: this.email,
+      isActive: this.isActive
+    };
+  };
 }
+
+module.exports = UserModel;
