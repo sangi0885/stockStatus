@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers, updateUser } from '../api/api';
 import Modalshow from './Modalshow';
-import { tableViewStyle } from './style';
 
 const Admin = () => {
   const [state, setState] = useState({
@@ -61,7 +60,7 @@ const Admin = () => {
   };
 
   return (
-    <div id="userTable" css={{ ...tableViewStyle }}>
+    <div id="userTable">
       <h1>Data Loaded from API</h1>
       <div className="container">
         <div className="row">
