@@ -19,13 +19,33 @@ router.post('/signin', async (req, res) => {
 });
 
 //*
-router.get('/getusers', async (req, res) => {
+router.get('/getactiveusers', async (req, res) => {
   try {
     const users = await userService.getAllUsers();
     const userList = users.reduce((acc, user) => {
       if (user.username && user.isActive)
         acc.push({
           username: user.username
+        });
+      return acc;
+    }, []);
+    console.log('userList:', userList);
+    res.status(200).json({ msg: 'success', userList });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/getusers', async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    const userList = users.reduce((acc, user) => {
+      if (user.username && user.isActive)
+        acc.push({
+          username: user.username,
+          email: user.email,
+          role: user.role
         });
       return acc;
     }, []);

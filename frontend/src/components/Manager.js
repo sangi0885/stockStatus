@@ -1,59 +1,108 @@
-import React, { useEffect, useState } from 'react';
-import { getAllUsers } from '../api/api';
+/* eslint-disable no-underscore-dangle */
+import CommandButton from '$components/commands/CommandButton';
+import { useCCSelector } from '$hooks/useCertiCraftReduxHooks';
+import getBatchesAndLotsCommands from '$redux/reducers/commands/selectors/getBatchesAndLotsCommands';
+import RCTable from '$shared/RCTable';
+import RCTableControls from '$shared/RCTable/RCTableControls';
+import Spacing from '$shared/Spacing';
+import { FormCommandInfo } from '$types/CommandInfo';
+import { css } from '@emotion/react';
+import { RouteComponentProps } from '@reach/router';
+import React, { useCallback, useMemo } from 'react';
+import useBatchesTableView, {
+  UseBatchesTableView
+} from './batchOrLot/hooks/useBatchesTableView';
+import useLotsTableView, {
+  UseLotsTableView
+} from './batchOrLot/hooks/useLotsTableView';
 
-const Manager = () => {
-  const userRole = localStorage.getItem('userRole');
-  const [data, setData] = useState([]);
-  if (!userRole) {
-    localStorage.clear();
+const style = css`
+  h3 {
+    font-size: 20px;
   }
-  if (userRole === '1') {
+
+  .commands {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 12px;
   }
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  .ant-table-cell * {
+    font-size: 16px;
+  }
 
-  const fetchData = async () => {
-    try {
-      const response = await getAllUsers();
-      if (response.data.msg === 'success') {
-        setData(response.data.users);
-      }
-      console.log(response);
-      setData(response.data.users);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
+  .ant-table-thead
+    > tr
+    > th:not(:last-child):not(.ant-table-selection-column):not(
+      .ant-table-row-expand-icon-cell
+    ):not([colspan])::before {
+    background-color: #ffffff6c;
+  }
+`;
+
+type Props = {
+  batchesOrLots: 'batches' | 'lots'
+} & RouteComponentProps;
+
+export default function BatchesLotsTable({
+  batchesOrLots
+}: Props): JSX.Element {
+  const [batchesCommands, lotsCommands] = useCCSelector(
+    getBatchesAndLotsCommands
+  );
+
+  const batchesTable = useBatchesTableView();
+  const lotsTable = useLotsTableView();
+
+  const tableProps =
+    (useMemo < UseBatchesTableView) |
+    (UseLotsTableView >
+      (() => (batchesOrLots === 'batches' ? batchesTable : lotsTable),
+      [batchesOrLots, batchesTable, lotsTable]));
+
+  const commands: FormCommandInfo[] = useMemo(() => {
+    const _commands =
+      batchesOrLots === 'batches' ? batchesCommands : lotsCommands;
+    return _commands ?? [];
+  }, [batchesOrLots, batchesCommands, lotsCommands]);
+
+  const setActive = useCallback(
+    (active: boolean) => tableProps?.setActiveOnly?.(active),
+    [tableProps]
+  );
+
+  const batchOrLot = useMemo(
+    () => (batchesOrLots === 'batches' ? 'Batches' : 'Lots'),
+    [batchesOrLots]
+  );
 
   return (
-    <div>
-      <h1>Admin Page</h1>
-      <div className="table-responsive">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(user => (
-              <tr key={user.id}>
-                <td>{user.username}</td>
-                <td>{user.roleId}</td>
-                <td>{user.isActive ? 'Active' : 'Disabled'}</td>
-                <td>Actions </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div css={style}>
+      <Spacing vertical={16} />
+      <div className="commands">
+        {commands.map(command => (
+          <CommandButton
+            key={command.commandType}
+            command={command}
+            spacingCss={{ margin: 0 }}
+          />
+        ))}
+      </div>
+      <Spacing vertical={24} />
+      <div>
+        <RCTableControls
+          additionalInfo={`Inactive ${batchOrLot} are filtered out by default.`}
+        />
+        <RCTable
+          {...tableProps}
+          // @ts-expect-error
+          scroll={{ x: 1500 }}
+          sticky={{ offsetHeader: 55 }}
+        />
       </div>
     </div>
   );
-};
-
-export default Manager;
+}

@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, signin } from '../api/api';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getActiveUsers, signin } from '../api/api';
 
 const Login = () => {
-  const { login } = useAuth();
   const [state, setState] = useState({
     user: {},
     loading: false,
     userList: []
   });
+
+  const [user, setUser] = useState();
+
+  const navigate = useNavigate();
 
   const changeState = updatedState => {
     setState(prevState => ({ ...prevState, ...updatedState }));
@@ -25,7 +28,7 @@ const Login = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await getAllUsers();
+        const response = await getActiveUsers();
         if (response.status === 200) {
           const data = response.data.userList;
           changeState({ userList: data });
@@ -40,23 +43,24 @@ const Login = () => {
 
   const handleLogin = async e => {
     e.preventDefault();
-    if (!state.loading) {
-      changeState({ loading: true });
-      try {
-        const response = await signin(credentials);
-        if (response.data.msg === 'success') {
-          localStorage.setItem('userRole', response.data.role);
-          localStorage.setItem('name', response.data.name);
-          login();
-        } else {
-          setError(`Failed to login. ${response.data.error}`);
-        }
-      } catch (error) {
-        setError(`Failed to login. ${error}`);
-      } finally {
-        changeState({ loading: false });
+    //if (!state.loading) {
+    changeState({ loading: true });
+    try {
+      const response = await signin(credentials);
+
+      console.log('Login response: before', response);
+      if (response) {
+        localStorage.setItem('userRole', response.role);
+        localStorage.setItem('name', response.name);
+        console.log('Login response:', response);
+        navigate('/dashboard');
       }
+    } catch (error) {
+      setError(`Failed to login here. ${error}`);
+    } finally {
+      changeState({ loading: false });
     }
+    // }
   };
 
   return (
