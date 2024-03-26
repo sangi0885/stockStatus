@@ -45,11 +45,14 @@ router.get('/getusers', async (req, res) => {
         acc.push({
           username: user.username,
           email: user.email,
-          role: user.role
+          role: user.role,
+          name: user.name,
+          permissions: Object.values(user.permissions).join(', '),
+          status: user.isActive ? 'Active' : 'Inactive'
         });
       return acc;
     }, []);
-    console.log('userList:', userList);
+
     res.status(200).json({ msg: 'success', userList });
   } catch (error) {
     console.error('Error getting users:', error);

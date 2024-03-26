@@ -61,7 +61,7 @@ const Admin = () => {
 
   return (
     <div id="userTable">
-      <h1>Data Loaded from API</h1>
+      <h4>User Details</h4>
       <div className="container">
         <div className="row">
           <div className="col-auto">

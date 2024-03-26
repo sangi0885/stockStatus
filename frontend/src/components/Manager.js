@@ -1,108 +1,64 @@
-/* eslint-disable no-underscore-dangle */
-import CommandButton from '$components/commands/CommandButton';
-import { useCCSelector } from '$hooks/useCertiCraftReduxHooks';
-import getBatchesAndLotsCommands from '$redux/reducers/commands/selectors/getBatchesAndLotsCommands';
-import RCTable from '$shared/RCTable';
-import RCTableControls from '$shared/RCTable/RCTableControls';
-import Spacing from '$shared/Spacing';
-import { FormCommandInfo } from '$types/CommandInfo';
-import { css } from '@emotion/react';
-import { RouteComponentProps } from '@reach/router';
-import React, { useCallback, useMemo } from 'react';
-import useBatchesTableView, {
-  UseBatchesTableView
-} from './batchOrLot/hooks/useBatchesTableView';
-import useLotsTableView, {
-  UseLotsTableView
-} from './batchOrLot/hooks/useLotsTableView';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getInventory } from '../api/api';
 
-const style = css`
-  h3 {
-    font-size: 20px;
-  }
+const Manager = () => {
+  const [paint, setPaint] = useState([]);
 
-  .commands {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-    width: 100%;
-    gap: 12px;
-  }
+  const navigate = useNavigate();
 
-  .ant-table-cell * {
-    font-size: 16px;
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getInventory();
 
-  .ant-table-thead
-    > tr
-    > th:not(:last-child):not(.ant-table-selection-column):not(
-      .ant-table-row-expand-icon-cell
-    ):not([colspan])::before {
-    background-color: #ffffff6c;
-  }
-`;
+        console.log('Paint:', response);
+        setPaint(response.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
 
-type Props = {
-  batchesOrLots: 'batches' | 'lots'
-} & RouteComponentProps;
-
-export default function BatchesLotsTable({
-  batchesOrLots
-}: Props): JSX.Element {
-  const [batchesCommands, lotsCommands] = useCCSelector(
-    getBatchesAndLotsCommands
-  );
-
-  const batchesTable = useBatchesTableView();
-  const lotsTable = useLotsTableView();
-
-  const tableProps =
-    (useMemo < UseBatchesTableView) |
-    (UseLotsTableView >
-      (() => (batchesOrLots === 'batches' ? batchesTable : lotsTable),
-      [batchesOrLots, batchesTable, lotsTable]));
-
-  const commands: FormCommandInfo[] = useMemo(() => {
-    const _commands =
-      batchesOrLots === 'batches' ? batchesCommands : lotsCommands;
-    return _commands ?? [];
-  }, [batchesOrLots, batchesCommands, lotsCommands]);
-
-  const setActive = useCallback(
-    (active: boolean) => tableProps?.setActiveOnly?.(active),
-    [tableProps]
-  );
-
-  const batchOrLot = useMemo(
-    () => (batchesOrLots === 'batches' ? 'Batches' : 'Lots'),
-    [batchesOrLots]
-  );
+    fetchData();
+  }, []);
 
   return (
-    <div css={style}>
-      <Spacing vertical={16} />
-      <div className="commands">
-        {commands.map(command => (
-          <CommandButton
-            key={command.commandType}
-            command={command}
-            spacingCss={{ margin: 0 }}
-          />
-        ))}
-      </div>
-      <Spacing vertical={24} />
-      <div>
-        <RCTableControls
-          additionalInfo={`Inactive ${batchOrLot} are filtered out by default.`}
-        />
-        <RCTable
-          {...tableProps}
-          // @ts-expect-error
-          scroll={{ x: 1500 }}
-          sticky={{ offsetHeader: 55 }}
-        />
+    <div id="paintTable">
+      <h4>Paint Details</h4>
+      <div className="container">
+        <div className="row">
+          <div className="col-auto">
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Color name</th>
+                    <th scope="col">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paint.length > 0 ? (
+                    paint.map((item, index) => (
+                      <tr key={index}>
+                        <th scope="row">{index + 1}</th>
+                        <td>{item.name}</td>
+                        <td>{item.quantity}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7">No data available</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Manager;

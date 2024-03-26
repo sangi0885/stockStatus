@@ -60,7 +60,7 @@ router.post('/orders', async (req, res) => {
 });
 
 // Route to update paint inventory
-router.put('/inventory/:paintId', async (req, res) => {
+router.put('/update/:paintId', async (req, res) => {
   try {
     const paintId = req.params.paintId;
     const updatedInventory = req.body;

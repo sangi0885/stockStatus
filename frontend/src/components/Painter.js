@@ -1,56 +1,95 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers } from '../api/api';
+import { useNavigate } from 'react-router-dom';
+import { getInventory, updatePaint } from '../api/api';
+import Modalshow from './Modalshow';
 
 const Painter = () => {
-  const userRole = localStorage.getItem('userRole');
-  const [data, setData] = useState([]);
-  if (!userRole) {
-    localStorage.clear();
-  }
-  if (userRole === '1') {
-  }
+  const [state, setState] = useState({
+    user: {},
+    loading: false,
+    userList: []
+  });
+
+  const [paint, setPaint] = useState([]);
+
+  const navigate = useNavigate();
+
+  const changeState = updatedState => {
+    setState(prevState => ({ ...prevState, ...updatedState }));
+  };
+
+  const [credentials, setCredentials] = useState('');
+
+  const [error, setError] = useState('');
+
+  const handleChange = e => {
+    setCredentials(e.target.value);
+  };
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getInventory();
+
+        console.log('Paint:', response);
+        setPaint(response.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const response = await getAllUsers();
-      if (response.data.msg === 'success') {
-        setData(response.data.users);
+  const handlePaint = async e => {
+    e.preventDefault();
+    if (!state.loading) {
+      changeState({ loading: true });
+      try {
+        const response = await updatePaint(credentials);
+        if (response) {
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        setError(`Failed to login here. ${error}`);
+      } finally {
+        changeState({ loading: false });
       }
-      console.log(response);
-      setData(response.data.users);
-    } catch (error) {
-      console.error('Error fetching data:', error);
     }
   };
 
   return (
-    <div>
-      <h1>Admin Page</h1>
-      <div className="table-responsive">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(user => (
-              <tr key={user.id}>
-                <td>{user.username}</td>
-                <td>{user.roleId}</td>
-                <td>{user.isActive ? 'Active' : 'Disabled'}</td>
-                <td>Actions </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div id="paintTable">
+      <h4>Paint Details</h4>
+      <div className="container">
+        <div className="row">
+          <div className="col-auto">
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paint.map((item, index) => (
+                    <tr>
+                      <th scope="row">{index + 1}</th>
+                      <td>{item.name}</td>
+                      <td>{item.quantity}</td>
+                      <td>
+                        <Modalshow />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
